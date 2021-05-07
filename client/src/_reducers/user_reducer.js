@@ -1,21 +1,21 @@
-import{
+import {
+    LOGIN_USER,
+    REGISTER_USER,
     AUTH_USER,
-    LOGIN_USER, REGISTER_USER
-}from '../_actions/types'
+    LOGOUT_USER,
+} from '../_actions/types';
+ 
 
-//action에 의해 변경된 상태 정보를 업데이트
 export default function(state={},action){
     switch(action.type){
-        case LOGIN_USER:
-            return {...state,loginSuccess:action.payload}
-            break;
         case REGISTER_USER:
-            return {...state,register: action.payload}
-            break;
+            return {...state, register: action.payload }
+        case LOGIN_USER:
+            return { ...state, loginSucces: action.payload }
         case AUTH_USER:
-            return {...state,userData:action.payload}
-            break;
-
+            return {...state, userData: action.payload }
+        case LOGOUT_USER:
+            return {...state }
         default:
             return state;
     }

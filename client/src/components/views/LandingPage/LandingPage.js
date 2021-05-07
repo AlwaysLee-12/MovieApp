@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from 'axios';
 import {withRouter} from 'react-router-dom'
 import {FaCode} from "react-icons/fa"
 import {API_KEY, API_URL, IMAGE_BASE_URL} from '../../Config';
