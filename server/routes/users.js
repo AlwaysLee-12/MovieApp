@@ -1,93 +1,71 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
-const jwt = require('jsonwebtoken');
-const moment = require("moment");
+const express = require('express');
+const router = express.Router();
+const { User } = require("../models/User");
 
-const userSchema = mongoose.Schema({
-    name: {
-        type:String,
-        maxlength:50
-    },
-    email: {
-        type:String,
-        trim:true,
-        unique: 1 
-    },
-    password: {
-        type: String,
-        minglength: 5
-    },
-    lastname: {
-        type:String,
-        maxlength: 50
-    },
-    role : {
-        type:Number,
-        default: 0 
-    },
-    image: String,
-    token : {
-        type: String,
-    },
-    tokenExp :{
-        type: Number
-    }
-})
+const { auth } = require("../middleware/auth");
 
+//=================================
+//             User
+//=================================
 
-userSchema.pre('save', function( next ) {
-    var user = this;
-    
-    if(user.isModified('password')){    
-        // console.log('password changed')
-        bcrypt.genSalt(saltRounds, function(err, salt){
-            if(err) return next(err);
-    
-            bcrypt.hash(user.password, salt, function(err, hash){
-                if(err) return next(err);
-                user.password = hash 
-                next()
-            })
-        })
-    } else {
-        next()
-    }
+router.get("/auth", auth, (req, res) => {
+    res.status(200).json({
+        _id: req.user._id,
+        isAdmin: req.user.role === 0 ? false : true,
+        isAuth: true,
+        email: req.user.email,
+        name: req.user.name,
+        lastname: req.user.lastname,
+        role: req.user.role,
+        image: req.user.image,
+    });
 });
 
-userSchema.methods.comparePassword = function(plainPassword,cb){
-    bcrypt.compare(plainPassword, this.password, function(err, isMatch){
-        if (err) return cb(err);
-        cb(null, isMatch)
-    })
-}
+router.post("/register", (req, res) => {
 
-userSchema.methods.generateToken = function(cb) {
-    var user = this;
-    console.log('user',user)
-    console.log('userSchema', userSchema)
-    var token =  jwt.sign(user._id.toHexString(),'secret')
-    var oneHour = moment().add(1, 'hour').valueOf();
+    const user = new User(req.body);
 
-    user.tokenExp = oneHour;
-    user.token = token;
-    user.save(function (err, user){
-        if(err) return cb(err)
-        cb(null, user);
-    })
-}
+    user.save((err, doc) => {
+        if (err) return res.json({ success: false, err });
+        return res.status(200).json({
+            success: true
+        });
+    });
+});
 
-userSchema.statics.findByToken = function (token, cb) {
-    var user = this;
+router.post("/login", (req, res) => {
+    User.findOne({ email: req.body.email }, (err, user) => {
+        if (!user)
+            return res.json({
+                loginSuccess: false,
+                message: "Auth failed, email not found"
+            });
 
-    jwt.verify(token,'secret',function(err, decode){
-        user.findOne({"_id":decode, "token":token}, function(err, user){
-            if(err) return cb(err);
-            cb(null, user);
-        })
-    })
-}
+        user.comparePassword(req.body.password, (err, isMatch) => {
+            if (!isMatch)
+                return res.json({ loginSuccess: false, message: "Wrong password" });
 
-const User = mongoose.model('User', userSchema);
+            user.generateToken((err, user) => {
+                if (err) return res.status(400).send(err);
+                res.cookie("w_authExp", user.tokenExp);
+                res
+                    .cookie("w_auth", user.token)
+                    .status(200)
+                    .json({
+                        loginSuccess: true, userId: user._id
+                    });
+            });
+        });
+    });
+});
 
-module.exports = { User }
+router.get("/logout", auth, (req, res) => {
+    User.findOneAndUpdate({ _id: req.user._id }, { token: "", tokenExp: "" }, (err, doc) => {
+        if (err) return res.json({ success: false, err });
+        return res.status(200).send({
+            success: true
+        });
+    });
+});
+
+module.exports = router;
