@@ -2,11 +2,16 @@ import axios from 'axios'
 import React,{useEffect,useState} from 'react'
 import './favorite.css'
 import {Popover} from 'antd'
+import {IMAGE_BASE_URL} from '../../Config'
 
 function FavoritePage() {
     const [Favorites,setFavorites]=useState([])
 
     useEffect(() => {
+        fetchFavoredMovie()
+    }, [])
+
+    const fetchFavoredMovie=()=>{
         axios.post('/api/favorite/getFavoredMovie',{userFrom:localStorage.getItem('userId')})
             .then(response=>{
                 if(response.data.success){
@@ -16,7 +21,23 @@ function FavoritePage() {
                     alert('영화 정보를 가져오는데 실패')
                 }
             })
-    }, [])
+    }
+
+    const onClickDelete=(movieId,userFrom)=>{
+        const variables={
+            movieId,
+            userFrom
+        }
+
+        axios.post('/api/favorite/removeFromFavorite',variables)
+        .then(response=>{
+            if(response.data.success){
+                fetchFavoredMovie()
+            }else{
+                alert("리스트에서 지우는데 실패")
+            }
+        })
+    }
 
     const renderCards= Favorites.map((favorite,index)=>{
         const content=(
@@ -33,7 +54,7 @@ function FavoritePage() {
             </Popover>
             <td>{favorite.movieTitle}</td>
             <td>{favorite.movieRunTime}mins</td>
-            <td><button>Remove</button></td>
+            <td><button onClick={()=>onClickDelete(favorite.movieId,favorite.userFrom)}>Remove</button></td>
         </tr>
     })
 
