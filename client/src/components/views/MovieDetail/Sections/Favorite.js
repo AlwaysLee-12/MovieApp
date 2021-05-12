@@ -4,7 +4,7 @@ import React,{useEffect,useState} from 'react'
 function Favorite(props) {
     const movieId=props.movieId
     const userFrom=props.userFrom
-    const movieTitle=props.movieInfo.title
+    const movieTitle=props.movieInfo.movieTitle
     const moviePost=props.movieInfo.backdrop_path
     const movieRunTime=props.movieInfo.runtime
     
@@ -12,11 +12,11 @@ function Favorite(props) {
     const [Favorited,setFavorited]=useState(false)
 
     let variables={
-        userFrom:userFrom,
-        movieId:movieId,
-        movieTitle:moviePost,
-        moviePost:moviePost,
-        movieRunTime:movieRunTime
+        userFrom,
+        movieId,
+        movieTitle,
+        moviePost,
+        movieRunTime
     }
     useEffect(() => {
         
